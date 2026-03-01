@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>bnb-arb-monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=JetBrains+Mono:wght@600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <main class="app-shell">
+      <header class="topbar card">
+        <div>
+          <p class="eyebrow">Mono Terminal</p>
+          <h1>bnb-arb-monitor</h1>
+          <p class="muted">BNB Chain spot check from CoinGecko vs OpenOcean</p>
+        </div>
+        <div class="actions">
+          <label class="toggle">
+            <input id="opportunityOnly" type="checkbox" />
+            <span>Opportunity only</span>
+          </label>
+          <button id="refreshBtn" class="btn btn-primary" type="button">Refresh</button>
+        </div>
+      </header>
+
+      <section class="metrics">
+        <article class="card stat">
+          <p class="muted">Tokens</p>
+          <p class="value" id="tokenCount">0</p>
+        </article>
+        <article class="card stat">
+          <p class="muted">Opportunities</p>
+          <p class="value accent" id="opportunityCount">0</p>
+        </article>
+        <article class="card stat">
+          <p class="muted">Last update</p>
+          <p class="value small" id="lastUpdated">--</p>
+        </article>
+      </section>
+
+      <section class="card table-card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Token</th>
+                <th>CEX</th>
+                <th>DEX</th>
+                <th>Spread %</th>
+                <th>Net %</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="priceRows">
+              <tr>
+                <td colspan="6" class="muted">Loading data...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
