@@ -4,6 +4,9 @@ const opportunityCountEl = document.getElementById("opportunityCount");
 const lastUpdatedEl = document.getElementById("lastUpdated");
 const refreshBtn = document.getElementById("refreshBtn");
 const opportunityOnlyCheckbox = document.getElementById("opportunityOnly");
+const howItWorksBtn = document.getElementById("howItWorksBtn");
+const howItWorksModal = document.getElementById("howItWorksModal");
+const closeHowItWorksBtn = document.getElementById("closeHowItWorksBtn");
 
 let latestData = [];
 
@@ -76,6 +79,27 @@ opportunityOnlyCheckbox.addEventListener("change", () => {
   renderRows();
 });
 
-loadPrices();
-setInterval(loadPrices, 15000);
+const openHowItWorksModal = () => {
+  howItWorksModal.classList.remove("hidden");
+};
 
+const closeHowItWorksModal = () => {
+  howItWorksModal.classList.add("hidden");
+};
+
+howItWorksBtn.addEventListener("click", openHowItWorksModal);
+closeHowItWorksBtn.addEventListener("click", closeHowItWorksModal);
+
+howItWorksModal.addEventListener("click", (event) => {
+  if (event.target instanceof HTMLElement && event.target.dataset.closeModal === "true") {
+    closeHowItWorksModal();
+  }
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !howItWorksModal.classList.contains("hidden")) {
+    closeHowItWorksModal();
+  }
+});
+
+loadPrices();

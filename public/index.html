@@ -26,6 +26,9 @@
             <input id="opportunityOnly" type="checkbox" />
             <span>Opportunity only</span>
           </label>
+          <button id="howItWorksBtn" class="btn btn-secondary" type="button">
+            How it works
+          </button>
           <button id="refreshBtn" class="btn btn-primary" type="button">Refresh</button>
         </div>
       </header>
@@ -67,6 +70,32 @@
         </div>
       </section>
     </main>
+    <div id="howItWorksModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="howItWorksTitle">
+      <div class="modal-backdrop" data-close-modal="true"></div>
+      <section class="modal-panel card">
+        <header class="modal-header">
+          <h2 id="howItWorksTitle">How this prototype works</h2>
+          <button id="closeHowItWorksBtn" class="btn btn-ghost" type="button" aria-label="Close">
+            Close
+          </button>
+        </header>
+        <div class="modal-body">
+          <p>
+            This prototype is a fast signal checker for potential BNB Chain arbitrage, not an auto-trading bot.
+          </p>
+          <ol>
+            <li>Loads a watchlist of BNB Chain tokens (for example: CAKE, WBNB, ETH, ADA, DOGE).</li>
+            <li>Fetches reference spot prices from CoinGecko.</li>
+            <li>Requests quote-based swap prices from OpenOcean using the same quote token and size.</li>
+            <li>Computes spread and net spread after configured trade costs.</li>
+            <li>Flags rows as <strong>Opportunity</strong> when spread exceeds cost + minimum profit threshold.</li>
+          </ol>
+          <p class="muted">
+            Use it to prioritize candidates for deeper execution checks (slippage, gas, latency, and routing quality).
+          </p>
+        </div>
+      </section>
+    </div>
     <script type="module" src="./app.js"></script>
   </body>
 </html>

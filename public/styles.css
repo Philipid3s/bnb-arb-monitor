@@ -90,10 +90,20 @@ h1 {
   border-radius: var(--radius-pill);
   padding: 0.55rem 1rem;
   border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-primary);
   font-family: "IBM Plex Mono", monospace;
   font-size: 0.9rem;
   cursor: pointer;
   transition: all 0.18s ease;
+}
+
+.btn-secondary {
+  background: var(--bg-input);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
 }
 
 .btn-primary {
@@ -104,6 +114,14 @@ h1 {
 
 .btn-primary:hover {
   background: var(--accent-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+}
+
+.btn-ghost:hover {
+  background: var(--bg-hover);
 }
 
 .toggle {
@@ -192,14 +210,79 @@ tbody tr:hover {
   background: rgba(119, 119, 119, 0.14);
 }
 
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-panel {
+  position: relative;
+  z-index: 1;
+  width: min(760px, 100%);
+  border: 1px solid var(--border);
+  padding: 1rem;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-family: "JetBrains Mono", monospace;
+}
+
+.modal-body p {
+  margin: 0 0 0.8rem;
+  line-height: 1.5;
+}
+
+.modal-body ol {
+  margin: 0 0 0.8rem;
+  padding-left: 1.35rem;
+  line-height: 1.55;
+}
+
+.modal-body code {
+  color: var(--accent);
+}
+
 @media (max-width: 760px) {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
   }
 
+  .actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
   .metrics {
     grid-template-columns: 1fr;
   }
-}
 
+  .modal-panel {
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
+  }
+}
