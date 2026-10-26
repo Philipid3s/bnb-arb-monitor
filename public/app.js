@@ -10,6 +10,11 @@ const closeHowItWorksBtn = document.getElementById("closeHowItWorksBtn");
 
 let latestData = [];
 
+const DIRECTION_LABELS = {
+  BUY_DEX_SELL_CEX: "Buy DEX → sell CEX",
+  BUY_CEX_SELL_DEX: "Buy CEX → sell DEX"
+};
+
 const fmt = (value, digits = 4) =>
   value == null || Number.isNaN(value) ? "--" : Number(value).toFixed(digits);
 
@@ -27,22 +32,27 @@ const renderRows = () => {
 
   if (!filtered.length) {
     rowsEl.innerHTML =
-      '<tr><td colspan="6" class="muted">No rows match this filter.</td></tr>';
+      '<tr><td colspan="8" class="muted">No rows match this filter.</td></tr>';
     return;
   }
 
   rowsEl.innerHTML = filtered
     .map((item) => {
       const dex = item.dexes?.[0];
-      const isOpportunity = Boolean(dex?.isOpportunity);
-      const statusClass = isOpportunity ? "status-opportunity" : "status-neutral";
-      const statusText = isOpportunity ? "Opportunity" : "Neutral";
+      const [statusClass, statusText] = dex?.suspect
+        ? ["status-suspect", "Check data"]
+        : dex?.isOpportunity
+          ? ["status-opportunity", "Opportunity"]
+          : ["status-neutral", "Neutral"];
+      const staleTag = item.cexStale ? ' <span class="stale-tag">stale</span>' : "";
 
       return `
         <tr>
           <td>${item.token}</td>
-          <td>$${fmt(item.cexPrice, 6)}</td>
-          <td>${dex ? `$${fmt(dex.price, 6)}` : "--"}</td>
+          <td>$${fmt(item.cexPrice, 6)}${staleTag}</td>
+          <td>${dex ? `$${fmt(dex.bid, 6)}` : "--"}</td>
+          <td>${dex ? `$${fmt(dex.ask, 6)}` : "--"}</td>
+          <td>${DIRECTION_LABELS[dex?.direction] ?? "--"}</td>
           <td>${dex ? `${fmt(dex.spread, 4)}%` : "--"}</td>
           <td>${dex ? `${fmt(dex.netSpread, 4)}%` : "--"}</td>
           <td><span class="status-pill ${statusClass}">${statusText}</span></td>
@@ -64,7 +74,7 @@ const loadPrices = async () => {
     latestData = await response.json();
     renderRows();
   } catch (error) {
-    rowsEl.innerHTML = `<tr><td colspan="6" class="muted">Failed to load /prices: ${error.message}</td></tr>`;
+    rowsEl.innerHTML = `<tr><td colspan="8" class="muted">Failed to load /prices: ${error.message}</td></tr>`;
   } finally {
     refreshBtn.disabled = false;
     refreshBtn.textContent = "Refresh";

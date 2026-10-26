@@ -210,6 +210,17 @@ tbody tr:hover {
   background: rgba(119, 119, 119, 0.14);
 }
 
+.status-suspect {
+  color: #f0b429;
+  background: rgba(240, 180, 41, 0.12);
+}
+
+.stale-tag {
+  margin-left: 0.35rem;
+  font-size: 0.7rem;
+  color: #f0b429;
+}
+
 .modal {
   position: fixed;
   inset: 0;
@@ -233,6 +244,8 @@ tbody tr:hover {
   position: relative;
   z-index: 1;
   width: min(760px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
   border: 1px solid var(--border);
   padding: 1rem;
 }
@@ -256,10 +269,31 @@ tbody tr:hover {
   line-height: 1.5;
 }
 
-.modal-body ol {
+.modal-body h3 {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--accent);
+}
+
+.modal-body ol,
+.modal-body ul {
   margin: 0 0 0.8rem;
   padding-left: 1.35rem;
   line-height: 1.55;
+}
+
+.modal-body dl {
+  margin: 0 0 0.8rem;
+  line-height: 1.5;
+}
+
+.modal-body dt {
+  font-weight: 600;
+}
+
+.modal-body dd {
+  margin: 0 0 0.6rem 1rem;
 }
 
 .modal-body code {
@@ -281,8 +315,4 @@ tbody tr:hover {
     grid-template-columns: 1fr;
   }
 
-  .modal-panel {
-    max-height: calc(100vh - 2rem);
-    overflow-y: auto;
-  }
 }

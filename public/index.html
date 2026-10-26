@@ -19,7 +19,7 @@
         <div>
           <p class="eyebrow">Mono Terminal</p>
           <h1>bnb-arb-monitor</h1>
-          <p class="muted">BNB Chain spot check from CoinGecko vs OpenOcean</p>
+          <p class="muted">BNB Chain spot check from CoinGecko vs KyberSwap</p>
         </div>
         <div class="actions">
           <label class="toggle">
@@ -55,7 +55,9 @@
               <tr>
                 <th>Token</th>
                 <th>CEX</th>
-                <th>DEX</th>
+                <th>DEX bid</th>
+                <th>DEX ask</th>
+                <th>Direction</th>
                 <th>Spread %</th>
                 <th>Net %</th>
                 <th>Status</th>
@@ -63,7 +65,7 @@
             </thead>
             <tbody id="priceRows">
               <tr>
-                <td colspan="6" class="muted">Loading data...</td>
+                <td colspan="8" class="muted">Loading data...</td>
               </tr>
             </tbody>
           </table>
@@ -83,13 +85,64 @@
           <p>
             This prototype is a fast signal checker for potential BNB Chain arbitrage, not an auto-trading bot.
           </p>
+
+          <h3>Pipeline</h3>
           <ol>
-            <li>Loads a watchlist of BNB Chain tokens (for example: CAKE, WBNB, ETH, ADA, DOGE).</li>
-            <li>Fetches reference spot prices from CoinGecko.</li>
-            <li>Requests quote-based swap prices from OpenOcean using the same quote token and size.</li>
-            <li>Computes spread and net spread after configured trade costs.</li>
-            <li>Flags rows as <strong>Opportunity</strong> when spread exceeds cost + minimum profit threshold.</li>
+            <li>Loads a watchlist of BNB Chain tokens (CAKE, WBNB, ETH, ADA, DOGE, DOT, XRP).</li>
+            <li>
+              Fetches reference USD prices from CoinGecko (cached for a few seconds). If CoinGecko fails, the last
+              good prices are reused for a few minutes and tagged <code>stale</code>.
+            </li>
+            <li>
+              Requests two KyberSwap aggregator quotes per token against USDT, both sized at the same USD amount
+              (<code>QUOTE_NOTIONAL_USD</code>, $1,000 by default):
+              a <strong>sell</strong> quote (token &rarr; USDT) gives the DEX bid, a <strong>buy</strong> quote
+              (USDT &rarr; token) gives the DEX ask.
+            </li>
+            <li>Computes the spread in both directions, keeps the better one, and subtracts configured trade costs.</li>
+            <li>Flags the row as <strong>Opportunity</strong> when the spread exceeds cost + minimum profit.</li>
           </ol>
+          <p class="muted">
+            Results are cached on the server for about 10 seconds and shared by everyone viewing the dashboard.
+          </p>
+
+          <h3>Columns</h3>
+          <dl>
+            <dt>CEX</dt>
+            <dd>
+              CoinGecko USD reference price. A <code>stale</code> tag means CoinGecko is currently failing and the
+              last good price is shown.
+            </dd>
+            <dt>DEX bid / DEX ask</dt>
+            <dd>
+              USDT per token received when selling / paid when buying on the DEX. Both already include pool fees
+              and price impact for the quoted size.
+            </dd>
+            <dt>Direction</dt>
+            <dd>
+              <code>Buy DEX &rarr; sell CEX</code>: spread = (CEX &minus; ask) / ask.<br />
+              <code>Buy CEX &rarr; sell DEX</code>: spread = (bid &minus; CEX) / CEX.
+            </dd>
+            <dt>Spread %</dt>
+            <dd>Gross edge of the better direction. Negative means neither direction is profitable.</dd>
+            <dt>Net %</dt>
+            <dd>Spread minus <code>TRADE_COST_PCT</code>.</dd>
+            <dt>Status</dt>
+            <dd>
+              <strong>Opportunity</strong> when spread &gt; <code>TRADE_COST_PCT</code> +
+              <code>MIN_PROFIT_PCT</code> (0.25% + 0.10% by default).
+              <strong>Check data</strong> when the spread is implausibly large (beyond
+              <code>MAX_PLAUSIBLE_SPREAD_PCT</code>, 20% by default), which usually means a data error rather than
+              a real opportunity.
+            </dd>
+          </dl>
+
+          <h3>Limitations</h3>
+          <ul>
+            <li>CoinGecko is an aggregated reference price, not an executable order book; it can lag the market.</li>
+            <li>Gas, CEX fees, withdrawal/bridge costs and transfer time are only covered by <code>TRADE_COST_PCT</code>.</li>
+            <li>The spread is valid for the quoted size only; larger trades get worse prices.</li>
+          </ul>
           <p class="muted">
             Use it to prioritize candidates for deeper execution checks (slippage, gas, latency, and routing quality).
           </p>

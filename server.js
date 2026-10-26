@@ -3,57 +3,53 @@ import express from "express";
 import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
+import { createCachedLoader } from "./cache.js";
 import { config } from "./config.js";
 import getCexPrices from "./getCexPrices.js";
-import getOpenOceanPrice from "./getOpenOceanPrice.js";
+import getDexPrice from "./getDexPrice.js";
+import { evaluateSpread } from "./spread.js";
+import { verifyTokenDecimals } from "./verifyTokens.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export const createApp = (
-  { getCexPricesImpl = getCexPrices, getOpenOceanPriceImpl = getOpenOceanPrice } = {}
-) => {
+export const createApp = ({
+  getCexPricesImpl = getCexPrices,
+  getDexPriceImpl = getDexPrice,
+  pricesCacheTtlMs = config.pricesCacheTtlMs
+} = {}) => {
+  const buildPrices = async () => {
+    const enrichedTokens = await getCexPricesImpl();
+    return Promise.all(
+      enrichedTokens.map(async (token) => {
+        const dexData = await getDexPriceImpl(token);
+        const dexes =
+          dexData?.bid != null || dexData?.ask != null
+            ? [{ ...dexData, ...evaluateSpread(token.cexPrice, dexData) }]
+            : [];
+
+        return {
+          token: token.symbol,
+          address: token.address,
+          cexPrice: token.cexPrice,
+          cexStale: Boolean(token.cexStale),
+          dexes
+        };
+      })
+    );
+  };
+
+  // Shared across clients so open dashboards don't multiply upstream requests.
+  const loadPrices = createCachedLoader(buildPrices, { ttlMs: pricesCacheTtlMs });
+
   const app = express();
   app.use(cors());
   app.use(express.static(path.join(__dirname, "public")));
 
   app.get("/prices", async (req, res) => {
     try {
-      const enrichedTokens = await getCexPricesImpl();
-      const results = await Promise.all(
-        enrichedTokens.map(async (token) => {
-          const dexData = await getOpenOceanPriceImpl(token);
-          const dexes = dexData?.price
-            ? [
-                (() => {
-                  const spread =
-                    token.cexPrice != null
-                      ? ((token.cexPrice - dexData.price) / dexData.price) * 100
-                      : null;
-                  const threshold = config.tradeCostPct + config.minProfitPct;
-                  const netSpread = spread != null ? spread - config.tradeCostPct : null;
-                  const isOpportunity = spread != null ? spread > threshold : false;
-
-                  return {
-                    ...dexData,
-                    spread,
-                    netSpread,
-                    isOpportunity
-                  };
-                })()
-              ]
-            : [];
-
-          return {
-            token: token.symbol,
-            address: token.address,
-            cexPrice: token.cexPrice,
-            dexes
-          };
-        })
-      );
-
-      res.json(results);
+      const { value } = await loadPrices();
+      res.json(value);
     } catch (err) {
       console.error(`[SERVER] Error: ${err.message}`);
       res.status(500).json({ error: "Server error" });
@@ -63,7 +59,8 @@ export const createApp = (
   return app;
 };
 
-export const startServer = () => {
+export const startServer = async () => {
+  await verifyTokenDecimals();
   const app = createApp();
   app.listen(config.port, () => {
     console.log(`Server listening on http://localhost:${config.port}`);

@@ -1,47 +1,42 @@
+import { createCachedLoader } from "./cache.js";
 import { config } from "./config.js";
 import { getJsonWithRetry } from "./http.js";
 import tokens from "./tokens.js";
 
-const ids = {
-  CAKE: "pancakeswap-token",
-  WBNB: "wbnb",
-  ETH: "ethereum",
-  ADA: "cardano",
-  DOGE: "dogecoin",
-  DOT: "polkadot",
-  XRP: "ripple"
+const fetchPrices = () => {
+  const ids = tokens.map((token) => token.coingeckoId).join(",");
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd`;
+  return getJsonWithRetry(url, {
+    retries: config.retryCount,
+    timeoutMs: config.requestTimeoutMs,
+    headers: config.coingeckoApiKey ? { "x-cg-demo-api-key": config.coingeckoApiKey } : {}
+  });
 };
 
-let cache = { at: 0, payload: null };
+const loadPrices = createCachedLoader(fetchPrices, {
+  ttlMs: config.cexCacheTtlMs,
+  maxStaleMs: config.cexMaxStaleMs
+});
 
-const mapTokensWithPrices = (prices) =>
+const mapTokensWithPrices = (prices, stale) =>
   tokens.map((token) => ({
     ...token,
-    cexPrice: prices?.[ids[token.symbol]]?.usd ?? null
+    cexPrice: prices?.[token.coingeckoId]?.usd ?? null,
+    cexStale: stale
   }));
 
 const getCexPrices = async () => {
-  const now = Date.now();
-  if (cache.payload && now - cache.at < config.cexCacheTtlMs) {
-    return cache.payload;
-  }
-
   try {
-    const coingeckoIds = Object.values(ids).join(",");
-    const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coingeckoIds}&vs_currencies=usd`;
-    const prices = await getJsonWithRetry(url, {
-      retries: config.retryCount,
-      timeoutMs: config.requestTimeoutMs
-    });
-
-    const payload = mapTokensWithPrices(prices);
-    cache = { at: now, payload };
-    return payload;
+    const { value, at, stale, error } = await loadPrices();
+    if (stale) {
+      const ageSec = Math.round((Date.now() - at) / 1000);
+      console.warn(`[CoinGecko] Error: ${error.message}; serving prices from ${ageSec}s ago`);
+    }
+    return mapTokensWithPrices(value, stale);
   } catch (err) {
     console.error(`[CoinGecko] Error: ${err.message}`);
-    return mapTokensWithPrices(null);
+    return mapTokensWithPrices(null, false);
   }
 };
 
 export default getCexPrices;
-
